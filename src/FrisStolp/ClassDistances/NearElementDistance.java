@@ -19,7 +19,22 @@ public class NearElementDistance implements ClassDistance{
     // distance to near element without every class
     private Map<FElement, Map<String, Double>>  distToNearWOClass;
 
-    public double calculate(Distance dist, FElement elem, Collection<ArrayList<FElement>> elems, double[][] distanceMatrix) {
+    public double calculate(Distance dist, FElement element, ArrayList<FElement> elems) {
+
+        double minDist = Double.POSITIVE_INFINITY;
+
+        for (FElement el : elems) {
+            double dis = dist.calculate(element, el);
+            if(dis < minDist) {
+                minDist = dis;
+            }
+        }
+
+        return minDist;
+
+    }
+
+    public double calculate(FElement elem, Collection<ArrayList<FElement>> elems, double[][] distanceMatrix) {
 
         double minDist = Double.MAX_VALUE;
 
@@ -36,7 +51,7 @@ public class NearElementDistance implements ClassDistance{
 
     }
 
-    public double calculate(Distance dist, FElement elem, ArrayList<FElement> elems, double[][] distanceMatrix) {
+    public double calculate(FElement elem, ArrayList<FElement> elems, double[][] distanceMatrix) {
 
         double minDist = Double.MAX_VALUE;
 

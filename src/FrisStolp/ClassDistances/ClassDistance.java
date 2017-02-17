@@ -12,9 +12,11 @@ import java.util.Map;
  */
 public interface ClassDistance {
 
-    double calculate(Distance dist, FElement elem, Collection<ArrayList<FElement>> elems, double[][] distanceMatrix);
+    double calculate(Distance dist, FElement elem, ArrayList<FElement> elems);
 
-    double calculate(Distance dist, FElement elem, ArrayList<FElement> elems, double[][] distanceMatrix);
+    double calculate(FElement elem, Collection<ArrayList<FElement>> elems, double[][] distanceMatrix);
+
+    double calculate(FElement elem, ArrayList<FElement> elems, double[][] distanceMatrix);
 
     double calculate(FElement element);
 
