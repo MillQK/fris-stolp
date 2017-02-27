@@ -1,15 +1,13 @@
 package FrisStolp;
 
 import FrisStolp.ClassDistances.ClassDistance;
+import FrisStolp.ClassDistances.MedianSumClassDistance;
 import FrisStolp.ClassDistances.NearElementDistance;
 import FrisStolp.Distances.Distance;
 import FrisStolp.Distances.EuclideanDist;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -51,11 +49,11 @@ public class Program {
             ioe.printStackTrace();
         }
 
-        FrisStolp frisStolp = new FrisStolp(distance, classDistance, 0.5, classes);
+        FrisStolp frisStolp = new FrisStolp(distance, classDistance, 0.15, classes);
         frisStolp.elements = elements;
         frisStolp.makeDistanceMatrix();
         frisStolp.makeNearDistances();
-        frisStolp.makeNearWOClassDistances();
+        //frisStolp.makeNearWOClassDistances();
         frisStolp.makeStolps();
 //        for (String clName : frisStolp.stolps.keySet()) {
 //            System.out.println(clName);
@@ -342,49 +340,293 @@ public class Program {
         ArrayList<String> recognized = fris.recognize(testElements);
         int correct = 0;
 
-        try(BufferedWriter bw = new BufferedWriter(
-                new FileWriter("./datasets/lfw/lfw_vectors_full_train_wrong.csv"))) {
-
-            StringBuilder sb = new StringBuilder();
-
-            for (int i = 0; i < recognized.size(); i++) {
-                if (testElementsClasses.get(i).equals(recognized.get(i))) {
-                    correct++;
-                } else {
-                    String vector = testElements.get(i).vector.stream()
-                            .map(Objects::toString).collect(Collectors.joining(","));
-
-                    sb.append(vector);
-                    sb.append(" ");
-                    sb.append(testElementsClasses.get(i));
-                    sb.append(" ");
-                    sb.append(recognized.get(i));
-                    sb.append("\n");
-
-                    bw.write(sb.toString());
-                    sb.setLength(0);
-                }
+        for (int i = 0; i < recognized.size(); i++) {
+            if (testElementsClasses.get(i).equals(recognized.get(i))) {
+                correct++;
             }
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
         }
+
+//        try(BufferedWriter bw = new BufferedWriter(
+//                new FileWriter("./datasets/lfw/lfw_vectors_full_train_wrong.csv"))) {
+//
+//            StringBuilder sb = new StringBuilder();
+//
+//            for (int i = 0; i < recognized.size(); i++) {
+//                if (testElementsClasses.get(i).equals(recognized.get(i))) {
+//                    correct++;
+//                } else {
+//                    String vector = testElements.get(i).vector.stream()
+//                            .map(Objects::toString).collect(Collectors.joining(","));
+//
+//                    sb.append(vector);
+//                    sb.append(" ");
+//                    sb.append(testElementsClasses.get(i));
+//                    sb.append(" ");
+//                    sb.append(recognized.get(i));
+//                    sb.append("\n");
+//
+//                    bw.write(sb.toString());
+//                    sb.setLength(0);
+//                }
+//            }
+//        } catch (IOException ioe) {
+//            ioe.printStackTrace();
+//        }
 
         System.out.println("Result: " + ((double) correct)/recognized.size());
 
     }
 
+    public static void lfwDataSetCensor() {
+
+        Distance distance = new EuclideanDist();
+        ClassDistance classDistance = new NearElementDistance();
+        Map<String, ArrayList<FElement>> classes = new HashMap<>();
+        ArrayList<FElement> elements = new ArrayList<FElement>();
+
+        ArrayList<FElement> testElements = new ArrayList<>();
+        ArrayList<String> testElementsClasses = new ArrayList<>();
+
+        try(BufferedReader br = new BufferedReader(
+                new FileReader("./datasets/lfw/lfw_vectors_full.csv"))) {
+
+            String line;
+            br.readLine();
+            while((line = br.readLine()) != null) {
+
+                String[] splited = line.split(",");
+                ArrayList<Double> vect = new ArrayList<>();
+                for (int i = 1; i < splited.length-1; i++) {
+                    vect.add(Double.parseDouble(splited[i]));
+                }
+                String className = splited[splited.length-1];
+                if (!classes.containsKey(className)) {
+                    classes.put(className, new ArrayList<>());
+                }
+                FElement elem = new FElement(0, vect);
+                classes.get(className).add(elem);
+                elements.add(elem);
+
+            }
+
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+
+
+        int countTest = 0;
+
+        for (String cl: classes.keySet()) {
+            for (int i = 0; i < classes.get(cl).size()/3; i++) {
+                FElement el = classes.get(cl).remove(0);
+                elements.remove(el);
+                el.index = countTest++;
+                testElements.add(el);
+                testElementsClasses.add(cl);
+            }
+        }
+
+        for (int i = 0; i < elements.size(); i++) {
+            elements.get(i).index = i;
+        }
+
+        FrisStolp frisStolp = new FrisStolp(distance, classDistance, 0.3, classes);
+        frisStolp.elements = elements;
+        frisStolp.makeDistanceMatrix();
+        frisStolp.makeNearDistances();
+        //frisStolp.makeNearWOClassDistances();
+        frisStolp.makeStolps();
+//        for (String clName : frisStolp.stolps.keySet()) {
+//            System.out.println(clName);
+//        }
+
+//        Fris fris = new Fris(distance, classDistance, classes, elements);
+//        fris.makeDistanceMatrix();
+//        fris.makeNearDistances();
+//        fris.makeNearWOClassDistances();
+
+
+        ArrayList<String> recognized = frisStolp.recognize(testElements);
+        int correct = 0;
+
+        for (int i = 0; i < recognized.size(); i++) {
+            if (testElementsClasses.get(i).equals(recognized.get(i))) {
+                correct++;
+            }
+        }
+
+//        try(BufferedWriter bw = new BufferedWriter(
+//                new FileWriter("./datasets/lfw/lfw_vectors_full_train_wrong.csv"))) {
+//
+//            StringBuilder sb = new StringBuilder();
+//
+//            for (int i = 0; i < recognized.size(); i++) {
+//                if (testElementsClasses.get(i).equals(recognized.get(i))) {
+//                    correct++;
+//                } else {
+//                    String vector = testElements.get(i).vector.stream()
+//                            .map(Objects::toString).collect(Collectors.joining(","));
+//
+//                    sb.append(vector);
+//                    sb.append(" ");
+//                    sb.append(testElementsClasses.get(i));
+//                    sb.append(" ");
+//                    sb.append(recognized.get(i));
+//                    sb.append("\n");
+//
+//                    bw.write(sb.toString());
+//                    sb.setLength(0);
+//                }
+//            }
+//        } catch (IOException ioe) {
+//            ioe.printStackTrace();
+//        }
+
+        System.out.println("Result: " + ((double) correct)/recognized.size());
+
+    }
+
+    public static void lfwDataSetNoise() {
+
+        Distance distance = new EuclideanDist();
+        ClassDistance classDistance = new MedianSumClassDistance();
+        Map<String, ArrayList<FElement>> classes = new HashMap<>();
+        ArrayList<FElement> elements = new ArrayList<FElement>();
+
+
+        ArrayList<FElement> testElements = new ArrayList<>();
+        ArrayList<String> testElementsClasses = new ArrayList<>();
+
+        try(BufferedReader br = new BufferedReader(
+                new FileReader("./datasets/lfw/lfw_vectors_full.csv"))) {
+
+            String line;
+            br.readLine();
+            while((line = br.readLine()) != null) {
+
+                String[] splited = line.split(",");
+                ArrayList<Double> vect = new ArrayList<>();
+                for (int i = 1; i < splited.length-1; i++) {
+                    vect.add(Double.parseDouble(splited[i]));
+                }
+                String className = splited[splited.length-1];
+                if (!classes.containsKey(className)) {
+                    classes.put(className, new ArrayList<>());
+                }
+                FElement elem = new FElement(0, vect);
+                classes.get(className).add(elem);
+                elements.add(elem);
+
+            }
+
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+
+        Random rnd = new Random();
+        ArrayList<String> clNames = new ArrayList<>(classes.keySet());
+        int lastPart = (int)(classes.keySet().size()*0.2); // last % to noice
+
+        for (int i = lastPart; i < clNames.size(); i++) {
+            for (FElement el: classes.get(clNames.get(i))) {
+                int newClass = rnd.nextInt(lastPart);
+                classes.get(clNames.get(newClass)).add(el);
+            }
+            classes.remove(clNames.get(i));
+        }
+
+        int countTest = 0;
+
+        for (String cl: classes.keySet()) {
+            for (int i = 0; i < classes.get(cl).size()/3; i++) {
+                FElement el = classes.get(cl).remove(0);
+                elements.remove(el);
+                el.index = countTest++;
+                testElements.add(el);
+                testElementsClasses.add(cl);
+            }
+        }
+
+        for (int i = 0; i < elements.size(); i++) {
+            elements.get(i).index = i;
+        }
+
+        save(classes, "./datasets/lfw/with_noice/lfw_vectors_full_train_noice.csv");
+        save(testElements, testElementsClasses, "./datasets/lfw/with_noice/lfw_vectors_full_test_noice.csv");
+
+
+//        FrisStolp frisStolp = new FrisStolp(distance, classDistance, 0.5, classes);
+//        frisStolp.elements = elements;
+//        frisStolp.makeDistanceMatrix();
+//        frisStolp.makeNearDistances();
+//        frisStolp.makeNearWOClassDistances();
+//        frisStolp.makeStolps();
+//        for (String clName : frisStolp.stolps.keySet()) {
+//            System.out.println(clName);
+//        }
+
+        Fris fris = new Fris(distance, classDistance, classes, elements);
+//        fris.makeDistanceMatrix();
+//        fris.makeNearDistances();
+//        fris.makeNearWOClassDistances();
+
+
+        ArrayList<String> recognized = fris.recognize(testElements);
+        int correct = 0;
+
+        for (int i = 0; i < recognized.size(); i++) {
+            if (testElementsClasses.get(i).equals(recognized.get(i))) {
+                correct++;
+            }
+        }
+
+//        try(BufferedWriter bw = new BufferedWriter(
+//                new FileWriter("./datasets/lfw/lfw_vectors_full_train_wrong.csv"))) {
+//
+//            StringBuilder sb = new StringBuilder();
+//
+//            for (int i = 0; i < recognized.size(); i++) {
+//                if (testElementsClasses.get(i).equals(recognized.get(i))) {
+//                    correct++;
+//                } else {
+//                    String vector = testElements.get(i).vector.stream()
+//                            .map(Objects::toString).collect(Collectors.joining(","));
+//
+//                    sb.append(vector);
+//                    sb.append(" ");
+//                    sb.append(testElementsClasses.get(i));
+//                    sb.append(" ");
+//                    sb.append(recognized.get(i));
+//                    sb.append("\n");
+//
+//                    bw.write(sb.toString());
+//                    sb.setLength(0);
+//                }
+//            }
+//        } catch (IOException ioe) {
+//            ioe.printStackTrace();
+//        }
+
+        System.out.println("Result: " + ((double) correct)/recognized.size());
+
+    }
+
+
     public static void main(String[] args) {
 
         //irisDataSet();
         //parallelLetterDataSet();
-        lfwDataSet();
+        letterDataSet();
+//        lfwDataSet();
+//        lfwDataSetNoise();
+//        lfwDataSetCensor();
 
     }
 
-    private static void save(Map<String, ArrayList<FElement>> classes) {
+    private static void save(Map<String, ArrayList<FElement>> classes, String path) {
 
         try(BufferedWriter bw = new BufferedWriter(
-                new FileWriter("./datasets/lfw/lfw_vectors_full_train.csv"))) {
+                new FileWriter(path))) {
 
             classes.forEach((cl, elems) -> {
 
@@ -418,10 +660,10 @@ public class Program {
 
     }
 
-    private static void save(ArrayList<FElement> elems, ArrayList<String> classes) {
+    private static void save(ArrayList<FElement> elems, ArrayList<String> classes, String path) {
 
         try(BufferedWriter bw = new BufferedWriter(
-                new FileWriter("./datasets/lfw/lfw_vectors_full_test.csv"))) {
+                new FileWriter(path))) {
 
             StringBuilder sb = new StringBuilder();
 

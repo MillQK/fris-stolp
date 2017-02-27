@@ -78,9 +78,12 @@ public class Fris {
         int current = 0;
 
         for (FElement element: elements) {
-            System.out.println(current++ + "/" + count);
+            if(current%100 == 0) {
+                System.out.println(current + "/" + count);
+            }
 
             results.add(findElementClass(element));
+            current++;
         }
 
         return results;
@@ -114,10 +117,37 @@ public class Fris {
 //
 //        }
 
-        double[] distances = new double[elements.size()];
-        for (FElement el: elements) {
-            distances[el.index] = distance.calculate(element, el);
-        }
+    //        double[] distances = new double[elements.size()];
+    //        for (FElement el: elements) {
+    //            distances[el.index] = distance.calculate(element, el);
+    //        }
+    //
+    //        double fMin = Double.POSITIVE_INFINITY, sMin = Double.POSITIVE_INFINITY;
+    //        String fMinClass = "fm", sMinClass = "sm";
+    //
+    //        for (String cl: classes.keySet()) {
+    //            for (FElement el: classes.get(cl)) {
+    //
+    //                if (distances[el.index] < fMin) {
+    //                    if (!cl.equals(fMinClass)) {
+    //                        sMin = fMin;
+    //                        sMinClass = fMinClass;
+    //                    }
+    //                    fMin = distances[el.index];
+    //                    fMinClass = cl;
+    //                } else {
+    //                    if (distances[el.index] < sMin && !cl.equals(fMinClass)) {
+    //                        sMin = distances[el.index];
+    //                        sMinClass = cl;
+    //                    }
+    //                }
+    //
+    //            }
+    //        }
+
+
+
+
 
 //        Map<String, Double> distToNearWOClass = new HashMap<>();
 //        ArrayList<Integer> indexes = new ArrayList<>();
@@ -144,41 +174,14 @@ public class Fris {
 //
 //        }
 
-        double fMin = Double.POSITIVE_INFINITY, sMin = Double.POSITIVE_INFINITY;
-        String fMinClass = "fm", sMinClass = "sm";
-
-        for (String cl: classes.keySet()) {
-            for (FElement el: classes.get(cl)) {
-
-                if (distances[el.index] < fMin) {
-                    if (!cl.equals(fMinClass)) {
-                        sMin = fMin;
-                        sMinClass = fMinClass;
-                    }
-                    fMin = distances[el.index];
-                    fMinClass = cl;
-                } else {
-                    if (distances[el.index] < sMin && !cl.equals(fMinClass)) {
-                        sMin = distances[el.index];
-                        sMinClass = cl;
-                    }
-                }
-
-            }
-        }
+        classDistance.setRecognElement(element, classes, elements, distance);
 
         for (String className: classes.keySet()) {
 
             ArrayList<FElement> classElements = classes.get(className);
 
             double distCI = classDistance.calculate(distance, element, classElements);
-//            double distOI = distToNearWOClass.get(className);
-
-            double distOI = fMin;
-
-            if (fMinClass.equals(className)) {
-                distOI = sMin;
-            }
+            double distOI = classDistance.getDistanceWOClass(className);
 
             double f = frisFunc(distCI, distOI);
 

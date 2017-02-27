@@ -14,8 +14,6 @@ public interface ClassDistance {
 
     double calculate(Distance dist, FElement elem, ArrayList<FElement> elems);
 
-    double calculate(FElement elem, Collection<ArrayList<FElement>> elems, double[][] distanceMatrix);
-
     double calculate(FElement elem, ArrayList<FElement> elems, double[][] distanceMatrix);
 
     double calculate(FElement element);
@@ -25,5 +23,12 @@ public interface ClassDistance {
     void makeNearWOClElemDistances(Map<String, ArrayList<FElement>> classes, double[][] distanceMatrix);
 
     double calculateDistWOClass(FElement elem, String className);
+
+    void setRecognElement(FElement element, Map<String, ArrayList<FElement>> classes,
+                          ArrayList<FElement> elements, Distance distance);
+
+    double getDistanceToClass(String className);
+
+    double getDistanceWOClass(String className);
 
 }

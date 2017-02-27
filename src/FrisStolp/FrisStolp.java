@@ -32,19 +32,17 @@ public class FrisStolp {
 
     public void makeDistanceMatrix() {
 
+        System.out.println("Start making distance matrix");
         int count = elements.size();
         distanceMatrix = new double[count][count];
         for (int i = 0; i < count; i++) {
-            if(i%1000 == 0){
-                System.out.println(i);
-            }
             FElement elem = elements.get(i);
             distanceMatrix[i][i] = 0;
             for (int j = i+1; j < count; j++) {
                 distanceMatrix[i][j] = distanceMatrix[j][i] = distance.calculate(elem, elements.get(j));
             }
         }
-
+        System.out.println("Finish making distance matrix");
     }
 
     public double frisFunc(double toObject, double toRival) {
@@ -60,22 +58,53 @@ public class FrisStolp {
         for (String clName : classes.keySet()) {
             otherItems.addAll(classes.get(clName));
         }
+        int stolpsCount = 0;
+        int count = 0;
+        int size = classes.size();
+        StringBuilder sb = new StringBuilder();
+
+        //dist to nearest item, class no matter
+        double[] nearestElem = new double[otherItems.size()];
+        for (String className : classes.keySet()) {
+            for (FElement element : classes.get(className)) {
+                double minDist = Double.POSITIVE_INFINITY;
+
+                for (FElement el : classes.get(className)) {
+                    if (element.index == el.index)
+                        continue;
+
+                    if (distanceMatrix[element.index][el.index] < minDist) {
+                        minDist = distanceMatrix[element.index][el.index];
+                    }
+                }
+
+                nearestElem[element.index] = minDist;
+            }
+        }
 
         for (String className : classes.keySet()) {
-            System.out.println(className);
 
-            ArrayList<FElement> currentItems = classes.get(className);
+//            if(count++%(size/10) == 0) {
+                System.out.println(sb.append(count++).append(" / ").append(size));
+                sb.setLength(0);
+//            }
+
+            ArrayList<FElement> currentItems = new ArrayList<>(classes.get(className));
             otherItems.removeAll(currentItems);
 
             Map<FElement, ArrayList<FElement>> classStolps = new HashMap<>();
-            Map<FElement, Double> elementsQual = new HashMap<>();
+//            Map<FElement, Double> elementsQual = new HashMap<>();
 
             while (currentItems.size() > 0) {
+
+                System.out.println(sb.append("Current Items size: ").append(currentItems.size()));
+                sb.setLength(0);
 
                 double maxStolpQual = Double.NEGATIVE_INFINITY;
                 FElement stolpCandidate = currentItems.get(0);
                 ArrayList<FElement> stolpCandidatesObjects = new ArrayList<>();
 
+                //ai
                 for (FElement currentItem : currentItems) {
 
                     ArrayList<FElement> currentStolpObjects = new ArrayList<>();
@@ -83,13 +112,17 @@ public class FrisStolp {
                     // current item defence
                     double curItemDefence = 0.0;
 
+                    //aj
                     for (FElement classItem : currentItems) {
 
                         if (classItem.index == currentItem.index)
                             continue;
 
+                        //aj bj
                         double rivalDist = classDistance.calculate(classItem);
-                        double objectDist = distance.calculate(currentItem, classItem, distanceMatrix);
+
+                        //ai aj
+                        double objectDist = distanceMatrix[currentItem.index][classItem.index];
                         double frisRes = frisFunc(objectDist, rivalDist);
 
                         // F(j,+) from description
@@ -106,8 +139,12 @@ public class FrisStolp {
 
                     for (FElement otherClassItem : otherItems) {
 
-                        double rivalDist = distance.calculate(currentItem, otherClassItem, distanceMatrix);
-                        double minDistance = classDistance.calculateDistWOClass(otherClassItem, className);
+                        //ai bn
+                        double rivalDist = distanceMatrix[currentItem.index][otherClassItem.index];
+                        //bn bn'
+                        double minDistance = Math.min(classDistance.calculateDistWOClass(otherClassItem, className),
+                                nearestElem[otherClassItem.index]);
+
 //                        double minDistance = Double.POSITIVE_INFINITY;
 //
 //                        for (FElement element : otherItems) {
@@ -135,7 +172,7 @@ public class FrisStolp {
 
                     // S(ai)
                     double stolpQual = curItemDefence + curItemToler;
-                    elementsQual.put(currentItem, stolpQual);
+//                    elementsQual.put(currentItem, stolpQual);
 
                     if (stolpQual > maxStolpQual) {
                         maxStolpQual = stolpQual;
@@ -148,14 +185,15 @@ public class FrisStolp {
                 }
 
                 classStolps.put(stolpCandidate, stolpCandidatesObjects);
+                stolpsCount++;
 
                 currentItems.remove(stolpCandidate);
                 currentItems.removeAll(stolpCandidatesObjects);
 
-                elementsQual.remove(stolpCandidate);
-                for (FElement el : stolpCandidatesObjects) {
-                    elementsQual.remove(el);
-                }
+//                elementsQual.remove(stolpCandidate);
+//                for (FElement el : stolpCandidatesObjects) {
+//                    elementsQual.remove(el);
+//                }
 
 
             }
@@ -165,6 +203,13 @@ public class FrisStolp {
 
         }
 
+        int c = 0;
+        for (Map.Entry<String, Map<FElement, ArrayList<FElement>>> me : stolps.entrySet()) {
+            c += me.getValue().keySet().size();
+        }
+
+        System.out.println(sb.append("Stolps: ").append(stolpsCount).append(" / ").append(elements.size()).append("  " + c));
+        System.out.println(FrisCompact.calculate(classes, stolps, distanceMatrix));
     }
 
     public void makeNearDistances() {
@@ -209,4 +254,6 @@ public class FrisStolp {
     public double[][] getDistanceMatrix() {
         return distanceMatrix;
     }
+
+
 }

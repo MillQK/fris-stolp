@@ -2,6 +2,8 @@ package FrisStolp.ClassDistances;
 
 import FrisStolp.Distances.Distance;
 import FrisStolp.FElement;
+import FrisStolp.Utils.ClDistPair;
+import FrisStolp.Utils.NearElmsPair;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,10 +16,12 @@ import java.util.Map;
 public class NearElementDistance implements ClassDistance{
 
     // distance to near element from other class
-    private Map<FElement, Double> distToNearEl;
+//    private Map<FElement, Double> distToNearEl;
 
     // distance to near element without every class
     private Map<FElement, Map<String, Double>>  distToNearWOClass;
+
+    private Map<FElement, NearElmsPair> distToNearElem;
 
     public double calculate(Distance dist, FElement element, ArrayList<FElement> elems) {
 
@@ -69,49 +73,71 @@ public class NearElementDistance implements ClassDistance{
     // distance to nearest element from other classes
     public void makeNearElemDistances(Map<String, ArrayList<FElement>> classes, double[][] distanceMatrix) {
 
-        distToNearEl = new HashMap<>();
-        ArrayList<Integer> indexes = new ArrayList<>();
+        System.out.println("Start making map with distances to two nearest elements");
 
-        for (String key : classes.keySet()) {
+//        distToNearEl = new HashMap<>();
+//        ArrayList<Integer> indexes = new ArrayList<>();
+        distToNearElem = new HashMap<>();
 
-            System.out.println(key);
+        for (String className : classes.keySet()) {
 
-            for (FElement element : classes.get(key)) {
+//            for (FElement element : classes.get(className)) {
+//
+//                indexes.add(element.index);
+//
+//            }
 
-                indexes.add(element.index);
+            for (FElement element : classes.get(className)) {
 
-            }
+                double fMin = Double.POSITIVE_INFINITY, sMin = Double.POSITIVE_INFINITY;
+                String fMinClass = "fm", sMinClass = "sm";
 
-            for (FElement element : classes.get(key)) {
+//                for (int i = 0; i < distanceMatrix[element.index].length; i++) {
+                for (String cl: classes.keySet()) {
+                    for (FElement el : classes.get(cl)) {
 
-                double dist = Double.MAX_VALUE;
+                        if (className.equals(cl))
+                            continue;
 
-                for (int i = 0; i < distanceMatrix[element.index].length; i++) {
+                        if (distanceMatrix[element.index][el.index] < fMin) {
+                            if (!className.equals(fMinClass)) {
+                                sMin = fMin;
+                                sMinClass = fMinClass;
+                            }
+                            fMin = distanceMatrix[element.index][el.index];
+                            fMinClass = cl;
+                        } else {
+                            if (distanceMatrix[element.index][el.index] < sMin && !cl.equals(fMinClass)) {
+                                sMin = distanceMatrix[element.index][el.index];
+                                sMinClass = cl;
+                            }
+                        }
 
-                    if (distanceMatrix[element.index][i] < dist && !indexes.contains(i)) {
-                        dist = distanceMatrix[element.index][i];
                     }
-
                 }
 
-                distToNearEl.put(element, dist);
+                distToNearElem.put(element, new NearElmsPair(new ClDistPair(fMinClass, fMin),
+                        new ClDistPair(sMinClass, sMin)));
 
             }
 
-            indexes.clear();
 
         }
+        System.out.println("Finish making map with distances to two nearest elements");
 
     }
 
+    //distance to near element from other class
     public double calculate(FElement element) {
 
-        return distToNearEl.get(element);
+        return distToNearElem.get(element).getFirst().getDistance();
 
     }
 
     public void makeNearWOClElemDistances(Map<String, ArrayList<FElement>> classes, double[][] distanceMatrix) {
 
+
+        System.out.println("Start making nearest element distance map WO classes");
         distToNearWOClass = new HashMap<>();
         ArrayList<Integer> indexes = new ArrayList<>();
 
@@ -123,7 +149,7 @@ public class NearElementDistance implements ClassDistance{
 
         for (String outClass : classes.keySet()) {
 
-            System.out.println(outClass);
+//            System.out.println(outClass);
 
             for (FElement element : classes.get(outClass)) {
 
@@ -158,13 +184,81 @@ public class NearElementDistance implements ClassDistance{
 
         }
 
+        System.out.println("Finish making nearest element distance map WO classes");
     }
 
     public double calculateDistWOClass(FElement elem, String className) {
 
-        return distToNearWOClass.get(elem).get(className);
+        NearElmsPair nearElmsPair = distToNearElem.get(elem);
+
+        if (nearElmsPair.getFirst().getClassName().equals(className)) {
+            return nearElmsPair.getSecond().getDistance();
+        }
+        return nearElmsPair.getFirst().getDistance();
 
     }
 
+    private FElement element;
+    private double fMin;
+    private String fMinClass;
+    private double sMin;
+    private Map<String, ArrayList<FElement>> classes;
+    private Distance dist;
 
+    @Override
+    public void setRecognElement(FElement element, Map<String, ArrayList<FElement>> classes,
+                                 ArrayList<FElement> elements, Distance distance) {
+
+        this.element = element;
+
+        double[] distances = new double[elements.size()];
+        for (FElement el: elements) {
+            distances[el.index] = distance.calculate(element, el);
+        }
+
+        double fMin = Double.POSITIVE_INFINITY, sMin = Double.POSITIVE_INFINITY;
+        String fMinClass = "fm";
+
+        for (String cl: classes.keySet()) {
+            for (FElement el: classes.get(cl)) {
+
+                if (distances[el.index] < fMin) {
+                    if (!cl.equals(fMinClass)) {
+                        sMin = fMin;
+//                        sMinClass = fMinClass;
+                    }
+                    fMin = distances[el.index];
+                    fMinClass = cl;
+                } else {
+                    if (distances[el.index] < sMin && !cl.equals(fMinClass)) {
+                        sMin = distances[el.index];
+//                        sMinClass = cl;
+                    }
+                }
+
+            }
+        }
+
+        this.fMin = fMin;
+        this.fMinClass = fMinClass;
+        this.sMin = sMin;
+//        this.sMinClass = sMinClass;
+
+        this.classes = classes;
+        this.dist = distance;
+    }
+
+    @Override
+    public double getDistanceToClass(String className) {
+        return calculate(dist, element, classes.get(className)); // TODO think about optimezed version
+    }
+
+    @Override
+    public double getDistanceWOClass(String className) {
+        if (fMinClass.equals(className)) {
+            return sMin;
+        }
+
+        return fMin;
+    }
 }
