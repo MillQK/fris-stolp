@@ -3,6 +3,7 @@ package FrisStolp.ClassDistances;
 import FrisStolp.Distances.Distance;
 import FrisStolp.FElement;
 import FrisStolp.Utils.ClDistPair;
+import FrisStolp.Utils.DistanceMatrix;
 import FrisStolp.Utils.NearElmsPair;
 
 import java.util.ArrayList;
@@ -71,44 +72,37 @@ public class NearElementDistance implements ClassDistance{
     }
 
     // distance to nearest element from other classes
-    public void makeNearElemDistances(Map<String, ArrayList<FElement>> classes, double[][] distanceMatrix) {
+    public void makeNearElemDistances(Map<String, ArrayList<FElement>> classes) {
 
         System.out.println("Start making map with distances to two nearest elements");
 
-//        distToNearEl = new HashMap<>();
-//        ArrayList<Integer> indexes = new ArrayList<>();
         distToNearElem = new HashMap<>();
 
         for (String className : classes.keySet()) {
-
-//            for (FElement element : classes.get(className)) {
-//
-//                indexes.add(element.index);
-//
-//            }
 
             for (FElement element : classes.get(className)) {
 
                 double fMin = Double.POSITIVE_INFINITY, sMin = Double.POSITIVE_INFINITY;
                 String fMinClass = "fm", sMinClass = "sm";
 
-//                for (int i = 0; i < distanceMatrix[element.index].length; i++) {
                 for (String cl: classes.keySet()) {
                     for (FElement el : classes.get(cl)) {
 
                         if (className.equals(cl))
                             continue;
 
-                        if (distanceMatrix[element.index][el.index] < fMin) {
+                        double dist = DistanceMatrix.getDistance(element, el);
+
+                        if (dist < fMin) {
                             if (!className.equals(fMinClass)) {
                                 sMin = fMin;
                                 sMinClass = fMinClass;
                             }
-                            fMin = distanceMatrix[element.index][el.index];
+                            fMin = dist;
                             fMinClass = cl;
                         } else {
-                            if (distanceMatrix[element.index][el.index] < sMin && !cl.equals(fMinClass)) {
-                                sMin = distanceMatrix[element.index][el.index];
+                            if (dist < sMin && !cl.equals(fMinClass)) {
+                                sMin = dist;
                                 sMinClass = cl;
                             }
                         }
@@ -134,7 +128,7 @@ public class NearElementDistance implements ClassDistance{
 
     }
 
-    public void makeNearWOClElemDistances(Map<String, ArrayList<FElement>> classes, double[][] distanceMatrix) {
+    public void makeNearWOClElemDistances(Map<String, ArrayList<FElement>> classes) {
 
 
         System.out.println("Start making nearest element distance map WO classes");
@@ -145,6 +139,12 @@ public class NearElementDistance implements ClassDistance{
             for (FElement elem : list) {
                 distToNearWOClass.put(elem, new HashMap<>());
             }
+        }
+
+        int size = 0;
+
+        for (ArrayList<FElement> elements : classes.values()) {
+            size += elements.size();
         }
 
         for (String outClass : classes.keySet()) {
@@ -166,10 +166,12 @@ public class NearElementDistance implements ClassDistance{
 
                     double dist = Double.MAX_VALUE;
 
-                    for (int i = 0; i < distanceMatrix[element.index].length; i++) {
+                    for (int i = 0; i < size; i++) {
 
-                        if (distanceMatrix[element.index][i] < dist && !indexes.contains(i) && element.index != i) {
-                            dist = distanceMatrix[element.index][i];
+                        double d = DistanceMatrix.getDistance(element.index, i);
+
+                        if (d < dist && !indexes.contains(i) && element.index != i) {
+                            dist = d;
                         }
 
                     }

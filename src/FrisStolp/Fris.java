@@ -61,13 +61,13 @@ public class Fris {
 
     public void makeNearDistances() {
 
-        classDistance.makeNearElemDistances(classes, distanceMatrix);
+        classDistance.makeNearElemDistances(classes);
 
     }
 
     public void makeNearWOClassDistances() {
 
-        classDistance.makeNearWOClElemDistances(classes, distanceMatrix);
+        classDistance.makeNearWOClElemDistances(classes);
 
     }
 

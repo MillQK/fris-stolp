@@ -38,12 +38,12 @@ public class MedianSumClassDistance implements ClassDistance {
     }
 
     @Override
-    public void makeNearElemDistances(Map<String, ArrayList<FElement>> classes, double[][] distanceMatrix) {
+    public void makeNearElemDistances(Map<String, ArrayList<FElement>> classes) {
 
     }
 
     @Override
-    public void makeNearWOClElemDistances(Map<String, ArrayList<FElement>> classes, double[][] distanceMatrix) {
+    public void makeNearWOClElemDistances(Map<String, ArrayList<FElement>> classes) {
 
     }
 

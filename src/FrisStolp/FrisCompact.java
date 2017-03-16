@@ -3,6 +3,7 @@ package FrisStolp;
 import FrisStolp.ClassDistances.ClassDistance;
 import FrisStolp.Distances.Distance;
 import FrisStolp.Utils.ClDistPair;
+import FrisStolp.Utils.DistanceMatrix;
 import FrisStolp.Utils.NearElmsPair;
 import FrisStolp.Utils.PairDistStolp;
 
@@ -17,20 +18,24 @@ import java.util.Map;
 public class FrisCompact {
 
     private static Map<FElement, PairDistStolp> toStolpDist = null;
+
     //ver 0 - sum class compact
     //ver 1 - mult class compact
     private static int VERSION = 0;
 
     public static double calculate(Map<String, ArrayList<FElement>> classes,
                                    Map<String, Map<FElement, ArrayList<FElement>>> stolps,
-                                   double[][] distanceMatrix) {
+                                   boolean isRecalcDist) {
 
-        if (toStolpDist == null) {
-            makeDistancesMap(classes, stolps, distanceMatrix);
+        if (toStolpDist == null || isRecalcDist) {
+            makeDistancesMap(classes, stolps);
         }
 
 
         double compact = 0.0;
+        if (VERSION == 0) compact = 0.0;
+        if (VERSION == 1) compact = 1.0;
+
 
         for (String className : classes.keySet()) {
 
@@ -44,34 +49,39 @@ public class FrisCompact {
                 double fris = (pair.getToOtherClassStolp() - pair.getToOwnClassStolp())/
                         (pair.getToOtherClassStolp() + pair.getToOwnClassStolp());
 
-                if (!Double.isNaN(fris)) {
+                if (Double.isFinite(fris)) {
                     frisSum += fris;
                 }
 
             }
 
-            int stolpCount = stolps.get(className).keySet().size();
+            int stolpCount = stolps.get(className).size();
 
             classCompact = (frisSum - stolpCount)/(stolpCount*classes.get(className).size());
 
+            if (stolpCount == 0 || classes.get(className).size() == 0)
+                continue;
+
             if (VERSION == 0) compact += classCompact;
-            if (VERSION == 1) compact *= classCompact;
+            if (VERSION == 1) compact *= Math.pow(classCompact, 1.0 / classes.size());
 
         }
 
-        if (VERSION == 0) compact /= classes.keySet().size();
-        if (VERSION == 1) compact = Math.pow(compact, 1.0 / classes.keySet().size());
+        if (VERSION == 0) compact /= classes.size();
+//        if (VERSION == 1) compact = Math.pow(compact, 1.0 / classes.keySet().size());
 
         return compact;
     }
 
     private static void makeDistancesMap(Map<String, ArrayList<FElement>> classes,
-                                         Map<String, Map<FElement, ArrayList<FElement>>> stolps,
-                                         double[][] distanceMatrix) {
+                                         Map<String, Map<FElement, ArrayList<FElement>>> stolps) {
 
-        System.out.println("Start making map with distances to two nearest stolps");
+//        System.out.println("Start making map with distances to two nearest stolps");
 
-        toStolpDist = new HashMap<>();
+        if (toStolpDist == null)
+            toStolpDist = new HashMap<>();
+        else
+            toStolpDist.clear();
 
         for (String className : classes.keySet()) {
 
@@ -80,8 +90,9 @@ public class FrisCompact {
                 double distOwn = Double.POSITIVE_INFINITY;
 
                 for (FElement el : stolps.get(className).keySet()) {
-                    if (distanceMatrix[element.index][el.index] < distOwn) {
-                        distOwn = distanceMatrix[element.index][el.index];
+                    double dist = DistanceMatrix.getDistance(element, el);
+                    if (dist < distOwn) {
+                        distOwn = dist;
                     }
                 }
 
@@ -94,9 +105,9 @@ public class FrisCompact {
                     }
 
                     for (FElement el : stolps.get(clName).keySet()) {
-
-                        if (distanceMatrix[element.index][el.index] < distOther) {
-                            distOther = distanceMatrix[element.index][el.index];
+                        double dist = DistanceMatrix.getDistance(element, el);
+                        if (dist < distOther) {
+                            distOther = dist;
                         }
 
                     }
@@ -108,7 +119,7 @@ public class FrisCompact {
 
         }
 
-        System.out.println("Finish making map with distances to two nearest stolps");
+//        System.out.println("Finish making map with distances to two nearest stolps");
 
 
     }
@@ -119,4 +130,7 @@ public class FrisCompact {
 
     }
 
+    public static Map<FElement, PairDistStolp> getToStolpDist() {
+        return toStolpDist;
+    }
 }

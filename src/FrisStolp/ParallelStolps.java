@@ -2,6 +2,7 @@ package FrisStolp;
 
 import FrisStolp.ClassDistances.ClassDistance;
 import FrisStolp.Distances.Distance;
+import FrisStolp.Utils.DistanceMatrix;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,7 +66,7 @@ public class ParallelStolps extends Thread {
                         continue;
 
                     double rivalDist = classDistance.calculate(classItem);
-                    double objectDist = distance.calculate(currentItem, classItem, frisStolp.getDistanceMatrix());
+                    double objectDist = DistanceMatrix.getDistance(currentItem, classItem);
                     double frisRes = frisStolp.frisFunc(objectDist, rivalDist);
 
                     // F(j,+) from description
@@ -82,7 +83,7 @@ public class ParallelStolps extends Thread {
 
                 for (FElement otherClassItem : otherItems) {
 
-                    double rivalDist = distance.calculate(currentItem, otherClassItem, frisStolp.getDistanceMatrix());
+                    double rivalDist = DistanceMatrix.getDistance(currentItem, otherClassItem);
                     double minDistance = classDistance.calculateDistWOClass(otherClassItem, className);
                     //                        double minDistance = Double.POSITIVE_INFINITY;
                     //
